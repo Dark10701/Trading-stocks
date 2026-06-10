@@ -126,7 +126,7 @@ export default function StockChart({ data, compact = false }: StockChartProps) {
               boxShadow: "0 8px 32px -4px rgb(0 0 0 / 0.4)",
             }}
             itemStyle={{ color: "oklch(0.95 0.01 260)", fontWeight: "600" }}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, "Price"]}
+            formatter={(value) => [`$${Number(value).toFixed(2)}`, "Price"]}
             labelStyle={{
               color: "oklch(0.65 0.02 260)",
               marginBottom: "4px",
