@@ -35,7 +35,7 @@ export default function StockSearch({ onSelect }: StockSearchProps) {
           `/api/stocks/search?q=${encodeURIComponent(query)}`
         );
         const data = await res.json();
-        setResults(data || []);
+        setResults(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error searching tickers", err);
         setResults([]);
