@@ -5,6 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { symbol, companyName, quantity, tradeType } = body;
+    // For SELL, quantity is optional (defaults to all shares).
 
     if (!symbol || !tradeType) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -25,8 +26,11 @@ export async function POST(request: NextRequest) {
       const result = await executeBuy(symbol, companyName, quantity);
       return NextResponse.json(result);
     } else {
-      // For SELL, quantity is implied (all shares), but we could validate.
-      const result = await executeSell(symbol);
+      // For SELL, quantity is optional — omit to sell the entire position.
+      if (quantity !== undefined && (quantity <= 0 || !Number.isInteger(quantity))) {
+        return NextResponse.json({ error: 'Quantity must be a positive integer for SELL' }, { status: 400 });
+      }
+      const result = await executeSell(symbol, quantity);
       return NextResponse.json(result);
     }
 
