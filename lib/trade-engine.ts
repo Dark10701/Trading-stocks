@@ -207,9 +207,13 @@ export async function executeSell(symbol: string, quantity?: number) {
   // 8. Snapshot portfolio value for the chart
   await recordSnapshot();
 
-  // 9. Trigger AI debrief asynchronously
+  // 9. Trigger AI debrief asynchronously.
+  // Resolve the app's base URL: explicit override, then Vercel's deployment URL, then localhost.
   if (tradeData) {
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/debrief`, {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    fetch(`${baseUrl}/api/debrief`, {
       method: 'POST',
       body: JSON.stringify({ tradeId: tradeData.id }),
       headers: { 'Content-Type': 'application/json' }

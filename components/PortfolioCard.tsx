@@ -50,7 +50,7 @@ export default function PortfolioCard({
 }: PortfolioCardProps) {
   if (isLoading) {
     return (
-      <div className="glass-card gradient-border glow-primary p-8">
+      <div className="glass-card gradient-border glow-primary p-5 sm:p-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-3">
@@ -69,7 +69,7 @@ export default function PortfolioCard({
 
   return (
     <div
-      className={`glass-card gradient-border p-8 ${isProfit ? "glow-green" : "glow-red"}`}
+      className={`glass-card gradient-border p-5 sm:p-8 ${isProfit ? "glow-green" : "glow-red"}`}
     >
       {/* Title row */}
       <div className="flex items-center justify-between mb-6">

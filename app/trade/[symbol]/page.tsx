@@ -183,7 +183,7 @@ export default function TradePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-6 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
         <div className="flex items-center justify-center py-32">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -192,7 +192,7 @@ export default function TradePage() {
   }
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
       {/* Back link */}
       <Link
         href="/explore"

@@ -47,7 +47,7 @@ export default function HistoryPage() {
     .reduce((sum, t) => sum + (t.pnl ?? 0), 0);
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
       {/* Header */}
       <div className="mb-8 animate-fade-up">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">

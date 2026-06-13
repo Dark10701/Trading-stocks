@@ -119,7 +119,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 animate-fade-up">
         <div>
@@ -184,7 +184,7 @@ export default function Dashboard() {
 
       {/* Portfolio Value Chart */}
       <div className="mb-8 animate-fade-up-delay-1">
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
             Portfolio Value Over Time
           </h2>
@@ -218,8 +218,8 @@ export default function Dashboard() {
           </div>
         ) : portfolio?.positions && portfolio.positions.length > 0 ? (
           <div className="glass-card overflow-hidden">
-            {/* Table header */}
-            <div className="grid grid-cols-[1fr_0.7fr_0.7fr_0.7fr_0.7fr_0.5fr] gap-4 px-6 py-3 border-b border-border/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {/* Table header (desktop only) */}
+            <div className="hidden md:grid grid-cols-[1fr_0.7fr_0.7fr_0.7fr_0.7fr_0.5fr] gap-4 px-6 py-3 border-b border-border/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Stock</span>
               <span className="text-right">Avg Cost</span>
               <span className="text-right">Current</span>
@@ -234,58 +234,134 @@ export default function Dashboard() {
               return (
                 <div
                   key={pos.id}
-                  className="grid grid-cols-[1fr_0.7fr_0.7fr_0.7fr_0.7fr_0.5fr] gap-4 px-6 py-4 border-b border-border/30 last:border-0 hover:bg-accent/30 transition-colors items-center"
+                  className="border-b border-border/30 last:border-0"
                 >
-                  <div>
-                    <Link
-                      href={`/trade/${pos.symbol}`}
-                      className="font-bold text-foreground hover:text-primary transition-colors"
-                    >
-                      {pos.symbol}
-                    </Link>
-                    <p className="text-xs text-muted-foreground truncate max-w-[160px]">
-                      {pos.company_name} · {pos.quantity} shares
-                    </p>
-                  </div>
-                  <span className="text-right text-sm font-medium text-foreground">
-                    ${pos.avg_buy_price.toFixed(2)}
-                  </span>
-                  <span className="text-right text-sm font-medium text-foreground">
-                    ${pos.current_price.toFixed(2)}
-                  </span>
-                  <span className="text-right text-sm font-medium text-foreground">
-                    $
-                    {pos.market_value.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                  <div className="text-right">
-                    <span
-                      className={`text-sm font-bold ${isProfit ? "text-profit" : "text-loss"}`}
-                    >
-                      {isProfit ? "+" : ""}$
-                      {Math.abs(pos.unrealized_pnl).toFixed(2)}
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-[1fr_0.7fr_0.7fr_0.7fr_0.7fr_0.5fr] gap-4 px-6 py-4 hover:bg-accent/30 transition-colors items-center">
+                    <div>
+                      <Link
+                        href={`/trade/${pos.symbol}`}
+                        className="font-bold text-foreground hover:text-primary transition-colors"
+                      >
+                        {pos.symbol}
+                      </Link>
+                      <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+                        {pos.company_name} · {pos.quantity} shares
+                      </p>
+                    </div>
+                    <span className="text-right text-sm font-medium text-foreground">
+                      ${pos.avg_buy_price.toFixed(2)}
                     </span>
-                    <p
-                      className={`text-[11px] font-medium ${isProfit ? "text-profit" : "text-loss"}`}
-                    >
-                      {isProfit ? "+" : ""}
-                      {pos.pnl_percent.toFixed(2)}%
-                    </p>
+                    <span className="text-right text-sm font-medium text-foreground">
+                      ${pos.current_price.toFixed(2)}
+                    </span>
+                    <span className="text-right text-sm font-medium text-foreground">
+                      $
+                      {pos.market_value.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                    <div className="text-right">
+                      <span
+                        className={`text-sm font-bold ${isProfit ? "text-profit" : "text-loss"}`}
+                      >
+                        {isProfit ? "+" : ""}$
+                        {Math.abs(pos.unrealized_pnl).toFixed(2)}
+                      </span>
+                      <p
+                        className={`text-[11px] font-medium ${isProfit ? "text-profit" : "text-loss"}`}
+                      >
+                        {isProfit ? "+" : ""}
+                        {pos.pnl_percent.toFixed(2)}%
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-8 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => handleSell(pos.symbol)}
+                        disabled={sellingSymbol === pos.symbol}
+                      >
+                        {sellingSymbol === pos.symbol ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          "Sell"
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-right">
+
+                  {/* Mobile card */}
+                  <div className="md:hidden p-4">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        <Link
+                          href={`/trade/${pos.symbol}`}
+                          className="font-bold text-foreground text-base"
+                        >
+                          {pos.symbol}
+                        </Link>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {pos.company_name} · {pos.quantity} shares
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p
+                          className={`text-sm font-bold ${isProfit ? "text-profit" : "text-loss"}`}
+                        >
+                          {isProfit ? "+" : ""}$
+                          {Math.abs(pos.unrealized_pnl).toFixed(2)}
+                        </p>
+                        <p
+                          className={`text-[11px] font-medium ${isProfit ? "text-profit" : "text-loss"}`}
+                        >
+                          {isProfit ? "+" : ""}
+                          {pos.pnl_percent.toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                      <div className="rounded-lg bg-accent/30 py-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                          Avg
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          ${pos.avg_buy_price.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-accent/30 py-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                          Current
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          ${pos.current_price.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-accent/30 py-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                          Value
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          $
+                          {pos.market_value.toLocaleString("en-US", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </p>
+                      </div>
+                    </div>
                     <Button
-                      size="sm"
                       variant="outline"
-                      className="text-xs h-8 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="w-full h-9 text-sm border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleSell(pos.symbol)}
                       disabled={sellingSymbol === pos.symbol}
                     >
                       {sellingSymbol === pos.symbol ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        "Sell"
+                        "Sell All"
                       )}
                     </Button>
                   </div>
