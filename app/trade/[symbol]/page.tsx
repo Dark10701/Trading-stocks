@@ -31,6 +31,7 @@ export default function TradePage() {
 
   // Buy form
   const [quantity, setQuantity] = useState<string>("");
+  const [sellQuantity, setSellQuantity] = useState<string>("");
   const [buying, setBuying] = useState(false);
   const [selling, setSelling] = useState(false);
   const [tradeResult, setTradeResult] = useState<{
@@ -133,27 +134,46 @@ export default function TradePage() {
     }
   };
 
+  const sellQty = parseInt(sellQuantity) || (position ? position.quantity : 0);
+
   const handleSell = async () => {
     if (!position || selling) return;
+    if (sellQty <= 0 || sellQty > position.quantity) return;
     setSelling(true);
     setTradeResult(null);
 
     try {
+      const isFullSell = sellQty === position.quantity;
       const res = await fetch("/api/trade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, tradeType: "SELL" }),
+        body: JSON.stringify({
+          symbol,
+          tradeType: "SELL",
+          // Omit quantity to sell the whole position.
+          ...(isFullSell ? {} : { quantity: sellQty }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Sell failed");
 
       const pnlSign = data.pnl >= 0 ? "+" : "";
+      const soldLabel = isFullSell
+        ? `all ${data.sharesSold} shares`
+        : `${data.sharesSold} share${data.sharesSold === 1 ? "" : "s"}`;
       setTradeResult({
         type: "success",
-        message: `Sold all shares of ${symbol}. P&L: ${pnlSign}$${Math.abs(data.pnl).toFixed(2)}`,
+        message: `Sold ${soldLabel} of ${symbol}. Realized P&L: ${pnlSign}$${Math.abs(data.pnl).toFixed(2)}`,
       });
       setCashBalance(data.newBalance);
-      setPosition(null);
+      setSellQuantity("");
+      // Re-fetch to reflect the reduced (or closed) position.
+      const pRes = await fetch("/api/portfolio");
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        const existing = pData.positions?.find((p: any) => p.symbol === symbol);
+        setPosition(existing || null);
+      }
     } catch (err: any) {
       setTradeResult({ type: "error", message: err.message });
     } finally {
@@ -250,15 +270,14 @@ export default function TradePage() {
           )}
 
           <div className="grid md:grid-cols-2 gap-6 animate-fade-up-delay-2">
-            {/* Buy Card */}
-            {!position && (
-              <div className="glass-card gradient-border p-6">
+            {/* Buy Card — always available (adds to an existing position) */}
+            <div className="glass-card gradient-border p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <div className="h-8 w-8 rounded-lg bg-profit flex items-center justify-center">
                     <ShoppingCart className="h-4 w-4 text-profit" />
                   </div>
                   <h3 className="font-bold text-foreground">
-                    Buy {symbol}
+                    {position ? `Buy More ${symbol}` : `Buy ${symbol}`}
                   </h3>
                 </div>
 
@@ -320,7 +339,6 @@ export default function TradePage() {
                   </Button>
                 </div>
               </div>
-            )}
 
             {/* Current Position / Sell Card */}
             {position && (
@@ -370,17 +388,58 @@ export default function TradePage() {
                   </div>
                 </div>
 
+                {/* Sell quantity (blank = sell all) */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Shares to sell
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setSellQuantity(String(position.quantity))}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Max ({position.quantity})
+                    </button>
+                  </div>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    max={position.quantity}
+                    placeholder={`All ${position.quantity} shares`}
+                    value={sellQuantity}
+                    onChange={(e) => setSellQuantity(e.target.value)}
+                    className="bg-input/50"
+                  />
+                  {sellQty > 0 && (
+                    <div className="flex justify-between text-sm mt-2">
+                      <span className="text-muted-foreground">Estimated proceeds</span>
+                      <span className="font-bold text-foreground">
+                        ${(sellQty * currentPrice).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {sellQty > position.quantity && (
+                    <p className="text-xs text-destructive font-medium mt-1">
+                      You only hold {position.quantity} shares
+                    </p>
+                  )}
+                </div>
+
                 <Button
                   className="w-full gap-2 bg-gradient-to-r from-destructive to-[oklch(0.55_0.22_25)] hover:opacity-90 text-white border-0 font-bold"
                   onClick={handleSell}
-                  disabled={selling}
+                  disabled={selling || sellQty <= 0 || sellQty > position.quantity}
                 >
                   {selling ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
                       <TrendingDown className="h-4 w-4" />
-                      Sell All Shares
+                      {sellQty === position.quantity
+                        ? "Sell All Shares"
+                        : `Sell ${sellQty} Share${sellQty === 1 ? "" : "s"}`}
                     </>
                   )}
                 </Button>

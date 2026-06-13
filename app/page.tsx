@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import PortfolioCard from "@/components/PortfolioCard";
+import PortfolioChart from "@/components/PortfolioChart";
 import { Button } from "@/components/ui/button";
 import {
   Search,
@@ -11,7 +12,14 @@ import {
   Loader2,
   ArrowRight,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
+
+interface Snapshot {
+  total_value: number;
+  cash_balance: number;
+  created_at: string;
+}
 
 interface Position {
   id: string;
@@ -36,16 +44,25 @@ interface PortfolioData {
 
 export default function Dashboard() {
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [history, setHistory] = useState<Snapshot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sellingSymbol, setSellingSymbol] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   const fetchPortfolio = async () => {
     try {
-      const res = await fetch("/api/portfolio");
-      if (!res.ok) throw new Error("Failed to load portfolio");
-      const data = await res.json();
+      const [pRes, hRes] = await Promise.all([
+        fetch("/api/portfolio"),
+        fetch("/api/portfolio/history"),
+      ]);
+      if (!pRes.ok) throw new Error("Failed to load portfolio");
+      const data = await pRes.json();
       setPortfolio(data);
+      if (hRes.ok) {
+        const hData = await hRes.json();
+        setHistory(Array.isArray(hData) ? hData : []);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -56,6 +73,27 @@ export default function Dashboard() {
   useEffect(() => {
     fetchPortfolio();
   }, []);
+
+  const handleReset = async () => {
+    if (resetting) return;
+    const ok = window.confirm(
+      "Reset your portfolio? This permanently deletes all positions and trade history and restores your $10,000 starting balance."
+    );
+    if (!ok) return;
+
+    setResetting(true);
+    try {
+      const res = await fetch("/api/reset", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Reset failed");
+      setIsLoading(true);
+      await fetchPortfolio();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleSell = async (symbol: string) => {
     if (sellingSymbol) return;
@@ -92,12 +130,27 @@ export default function Dashboard() {
             Your portfolio at a glance
           </p>
         </div>
-        <Link href="/explore">
-          <Button className="gap-2 bg-gradient-to-r from-[oklch(0.65_0.18_270)] to-[oklch(0.55_0.2_280)] hover:opacity-90 transition-opacity text-white border-0 shadow-lg shadow-[oklch(0.65_0.18_270_/_20%)]">
-            <Search className="h-4 w-4" />
-            Find Stocks
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2 text-muted-foreground hover:text-foreground"
+            onClick={handleReset}
+            disabled={resetting}
+          >
+            {resetting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}
+            Reset
           </Button>
-        </Link>
+          <Link href="/explore">
+            <Button className="gap-2 bg-gradient-to-r from-[oklch(0.65_0.18_270)] to-[oklch(0.55_0.2_280)] hover:opacity-90 transition-opacity text-white border-0 shadow-lg shadow-[oklch(0.65_0.18_270_/_20%)]">
+              <Search className="h-4 w-4" />
+              Find Stocks
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Error State */}
@@ -127,6 +180,22 @@ export default function Dashboard() {
           totalPnl={portfolio?.total_unrealized_pnl ?? 0}
           isLoading={isLoading}
         />
+      </div>
+
+      {/* Portfolio Value Chart */}
+      <div className="mb-8 animate-fade-up-delay-1">
+        <div className="glass-card p-6">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            Portfolio Value Over Time
+          </h2>
+          {isLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <PortfolioChart data={history} />
+          )}
+        </div>
       </div>
 
       {/* Positions Section */}
