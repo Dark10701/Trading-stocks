@@ -108,6 +108,15 @@ export default function Dashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Sell failed");
 
+      // Fire-and-forget AI debrief (no-op if no Anthropic key configured).
+      if (data.tradeId) {
+        fetch("/api/debrief", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tradeId: data.tradeId }),
+        }).catch(() => {});
+      }
+
       // Refresh portfolio data
       setIsLoading(true);
       await fetchPortfolio();

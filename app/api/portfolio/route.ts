@@ -1,21 +1,36 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { getQuote } from '@/lib/polygon';
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { getQuote } from "@/lib/polygon";
+import { ensurePortfolio } from "@/lib/portfolio";
 
 export async function GET() {
   try {
-    // Fetch portfolio balance and all positions in parallel
-    const [{ data: portfolio, error: pErr }, { data: positions, error: posErr }] = await Promise.all([
-      supabase.from('portfolio').select('*').single(),
-      supabase.from('positions').select('*').order('bought_at', { ascending: false })
-    ]);
-
-    if (pErr || !portfolio) {
-      return NextResponse.json({ error: 'Portfolio not found' }, { status: 404 });
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    // Create the portfolio on first access.
+    await ensurePortfolio(supabase, user.id);
+
+    const [{ data: portfolio, error: pErr }, { data: positions, error: posErr }] =
+      await Promise.all([
+        supabase.from("portfolio").select("*").eq("user_id", user.id).single(),
+        supabase
+          .from("positions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("bought_at", { ascending: false }),
+      ]);
+
+    if (pErr || !portfolio) {
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
+    }
     if (posErr) {
-      return NextResponse.json({ error: 'Failed to fetch positions' }, { status: 500 });
+      return NextResponse.json({ error: "Failed to fetch positions" }, { status: 500 });
     }
 
     // Enrich each position with current price + unrealized P&L
@@ -28,7 +43,6 @@ export async function GET() {
           const costBasis = pos.avg_buy_price * pos.quantity;
           const unrealizedPnl = marketValue - costBasis;
           const pnlPercent = costBasis > 0 ? (unrealizedPnl / costBasis) * 100 : 0;
-
           return {
             ...pos,
             current_price: currentPrice,
@@ -38,7 +52,6 @@ export async function GET() {
             pnl_percent: pnlPercent,
           };
         } catch {
-          // If quote fetch fails, return position with buy-price as current
           const costBasis = pos.avg_buy_price * pos.quantity;
           return {
             ...pos,
@@ -65,7 +78,10 @@ export async function GET() {
       positions: enrichedPositions,
     });
   } catch (error: any) {
-    console.error('Portfolio API error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch portfolio' }, { status: 500 });
+    console.error("Portfolio API error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch portfolio" },
+      { status: 500 }
+    );
   }
 }

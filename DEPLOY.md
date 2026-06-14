@@ -14,8 +14,13 @@ Below is everything needed to go live.
 Run these SQL files in the Supabase SQL editor, in order, if you haven't already:
 
 1. `database.sql` — core tables (portfolio, positions, trades)
-2. `database-rls-fix.sql` — row-level security policies + starting balance
+2. `database-rls-fix.sql` — initial RLS policies + starting balance
 3. `database-v2.sql` — portfolio_snapshots table (powers the value chart)
+4. `database-v3.sql` — per-user ownership + auth RLS (multi-user)
+
+**Authentication (Google sign-in) is required.** Follow `AUTH-SETUP.md` to create
+Google OAuth credentials and enable the Google provider in Supabase before the app
+is usable. Add your Vercel domain to the Google origins and Supabase URL config.
 
 ## 2. Import the project into Vercel
 

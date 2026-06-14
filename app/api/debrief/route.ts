@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/server';
 import { generateDebrief, isClaudeConfigured } from '@/lib/claude';
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { tradeId } = await request.json();
     if (!tradeId) {
       return NextResponse.json({ error: 'tradeId is required' }, { status: 400 });

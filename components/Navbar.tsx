@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { TrendingUp, Search, Clock } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { TrendingUp, Search, Clock, LogOut } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: TrendingUp },
@@ -16,10 +19,37 @@ function isActivePath(pathname: string, href: string) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  // No navigation chrome on the login / auth screens.
+  if (pathname.startsWith("/login") || pathname.startsWith("/auth")) {
+    return null;
+  }
+
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
   return (
     <>
-      {/* Top bar: logo always; inline links on md+ */}
+      {/* Top bar: logo always; inline links + user on md+ */}
       <nav className="sticky top-0 z-50 glass-card-strong border-b border-border/50">
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -53,10 +83,36 @@ export default function Navbar() {
               );
             })}
           </div>
+
+          {/* User section (all sizes) */}
+          {user && (
+            <div className="flex items-center gap-2">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt="Your avatar"
+                  className="h-8 w-8 rounded-full border border-border/60"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-foreground">
+                  {(user.email ?? "?").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <button
+                onClick={signOut}
+                title="Sign out"
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Bottom tab bar: phones only. Sits above the home indicator via safe-area inset. */}
+      {/* Bottom tab bar: phones only. */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-card-strong border-t border-border/50"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -72,9 +128,7 @@ export default function Navbar() {
                   isActive ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
-                <Icon
-                  className={`h-5 w-5 ${isActive ? "text-primary" : ""}`}
-                />
+                <Icon className={`h-5 w-5 ${isActive ? "text-primary" : ""}`} />
                 <span className="text-[11px] font-medium">{label}</span>
               </Link>
             );

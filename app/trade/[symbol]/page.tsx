@@ -167,6 +167,14 @@ export default function TradePage() {
       });
       setCashBalance(data.newBalance);
       setSellQuantity("");
+      // Fire-and-forget AI debrief (no-op if no Anthropic key configured).
+      if (data.tradeId) {
+        fetch("/api/debrief", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tradeId: data.tradeId }),
+        }).catch(() => {});
+      }
       // Re-fetch to reflect the reduced (or closed) position.
       const pRes = await fetch("/api/portfolio");
       if (pRes.ok) {
