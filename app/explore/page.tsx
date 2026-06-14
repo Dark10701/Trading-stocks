@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import StockSearch from "@/components/StockSearch";
 import StockChart from "@/components/StockChart";
+import TopStocks from "@/components/TopStocks";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 
 export default function ExplorePage() {
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
@@ -73,6 +74,13 @@ export default function ExplorePage() {
         <StockSearch onSelect={fetchStockData} />
       </div>
 
+      {/* Default state: popular stocks grid (until a stock is selected) */}
+      {!selectedSymbol && !loadingData && (
+        <div className="animate-fade-up">
+          <TopStocks onSelect={fetchStockData} />
+        </div>
+      )}
+
       {loadingData && (
         <div className="flex justify-center my-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -87,6 +95,19 @@ export default function ExplorePage() {
 
       {!loadingData && selectedSymbol && quote && !error && (
         <div className="space-y-8 animate-fade-up">
+          {/* Back to popular stocks */}
+          <button
+            onClick={() => {
+              setSelectedSymbol(null);
+              setQuote(null);
+              setError(null);
+            }}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to popular stocks
+          </button>
+
           {/* Price header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
