@@ -56,7 +56,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on everything except Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon-.*\\.png|apple-icon.png).*)",
+    // Run on page navigations only. Skip Next internals, static assets, and
+    // /api routes (those authenticate themselves, so the proxy's auth-server
+    // round-trip would be redundant).
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|icon-.*\\.png|apple-icon.png).*)",
   ],
 };

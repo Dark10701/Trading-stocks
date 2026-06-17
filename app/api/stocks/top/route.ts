@@ -64,12 +64,22 @@ const MIN_DOLLAR_VOLUME = 30_000_000; // $30M traded that day
 const LIMIT = 16;
 const VALID_TICKER = /^[A-Z]{1,5}$/;
 
+// In-memory cache of the computed movers (the grouped payload is large, so we
+// avoid re-filtering thousands of rows on every request). 1-hour TTL.
+const moversCache: Record<string, { at: number; data: any[] }> = {};
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
 export async function GET(request: Request) {
   try {
     const direction =
       new URL(request.url).searchParams.get("direction") === "losers"
         ? "losers"
         : "gainers";
+
+    const cached = moversCache[direction];
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+      return NextResponse.json(cached.data);
+    }
 
     const bars = await getRecentTradingDayBars();
 
@@ -100,7 +110,9 @@ export async function GET(request: Request) {
         : a.changePercent - b.changePercent
     );
 
-    return NextResponse.json(movers.slice(0, LIMIT));
+    const result = movers.slice(0, LIMIT);
+    moversCache[direction] = { at: Date.now(), data: result };
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error("Top movers API error:", error);
     return NextResponse.json(
