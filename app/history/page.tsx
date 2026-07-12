@@ -21,6 +21,7 @@ export default function HistoryPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"ALL" | "BUY" | "SELL">("ALL");
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -45,6 +46,10 @@ export default function HistoryPage() {
   const realizedPnl = trades
     .filter((t) => t.pnl !== null)
     .reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+
+  const filteredTrades = trades.filter(
+    (t) => filter === "ALL" || t.trade_type === filter
+  );
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
@@ -121,10 +126,36 @@ export default function HistoryPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3 animate-fade-up-delay-2">
-          {trades.map((trade) => (
-            <TradeCard key={trade.id} trade={trade} />
-          ))}
+        <div className="animate-fade-up-delay-2">
+          {/* Filter tabs */}
+          <div className="inline-flex rounded-lg bg-accent/40 p-0.5 mb-4">
+            {(["ALL", "BUY", "SELL"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                  filter === f
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f === "ALL" ? "All" : f === "BUY" ? "Buys" : "Sells"}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            {filteredTrades.map((trade) => (
+              <TradeCard key={trade.id} trade={trade} />
+            ))}
+            {filteredTrades.length === 0 && (
+              <div className="glass-card p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No {filter === "BUY" ? "buy" : "sell"} trades yet.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

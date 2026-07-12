@@ -6,7 +6,13 @@ import StockSearch from "@/components/StockSearch";
 import StockChart from "@/components/StockChart";
 import TopStocks from "@/components/TopStocks";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 
 export default function ExplorePage() {
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
@@ -114,10 +120,27 @@ export default function ExplorePage() {
               <h2 className="text-4xl font-bold text-foreground tracking-tight">
                 {selectedSymbol}
               </h2>
-              <div className="flex items-baseline gap-3 mt-1">
+              <div className="flex items-center gap-3 mt-1">
                 <span className="text-3xl font-semibold text-foreground">
                   ${quote.c?.toFixed(2)}
                 </span>
+                {quote.o ? (
+                  <span
+                    className={`flex items-center gap-1 text-sm font-semibold px-2 py-0.5 rounded-full ${
+                      quote.c >= quote.o
+                        ? "bg-profit text-profit"
+                        : "bg-loss text-loss"
+                    }`}
+                  >
+                    {quote.c >= quote.o ? (
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <TrendingDown className="h-3.5 w-3.5" />
+                    )}
+                    {quote.c >= quote.o ? "+" : ""}
+                    {(((quote.c - quote.o) / quote.o) * 100).toFixed(2)}%
+                  </span>
+                ) : null}
               </div>
             </div>
             <Link href={`/trade/${selectedSymbol}`}>

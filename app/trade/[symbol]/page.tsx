@@ -92,6 +92,12 @@ export default function TradePage() {
   const qty = parseInt(quantity) || 0;
   const totalCost = qty * currentPrice;
   const canAfford = totalCost <= cashBalance && totalCost > 0;
+  const maxAffordable = currentPrice > 0 ? Math.floor(cashBalance / currentPrice) : 0;
+
+  // Day change from the latest daily bar (open -> close).
+  const dayChange = quote?.o ? currentPrice - quote.o : 0;
+  const dayChangePct = quote?.o ? (dayChange / quote.o) * 100 : 0;
+  const dayUp = dayChange >= 0;
 
   const handleBuy = async () => {
     if (!canAfford || buying) return;
@@ -224,10 +230,25 @@ export default function TradePage() {
               <h1 className="text-4xl font-bold text-foreground tracking-tight">
                 {symbol}
               </h1>
-              <div className="flex items-baseline gap-3 mt-1">
+              <div className="flex items-center gap-3 mt-1">
                 <span className="text-3xl font-semibold text-foreground">
                   ${currentPrice.toFixed(2)}
                 </span>
+                {quote?.o ? (
+                  <span
+                    className={`flex items-center gap-1 text-sm font-semibold px-2 py-0.5 rounded-full ${
+                      dayUp ? "bg-profit text-profit" : "bg-loss text-loss"
+                    }`}
+                  >
+                    {dayUp ? (
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <TrendingDown className="h-3.5 w-3.5" />
+                    )}
+                    {dayUp ? "+" : ""}
+                    {dayChangePct.toFixed(2)}%
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
@@ -291,9 +312,20 @@ export default function TradePage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-1.5">
-                      Quantity
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Quantity
+                      </label>
+                      {maxAffordable > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(String(maxAffordable))}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Max ({maxAffordable})
+                        </button>
+                      )}
+                    </div>
                     <Input
                       type="number"
                       min="1"

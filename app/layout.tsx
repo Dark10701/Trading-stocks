@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 import Navbar from "@/components/Navbar";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: "PaperTrade — Virtual Stock Trading",
@@ -46,9 +47,17 @@ export default function RootLayout({
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Navbar />
-        {/* Bottom padding clears the mobile tab bar (hidden on md+) */}
-        <main className="flex-1 pb-24 md:pb-0">{children}</main>
+        <ToastProvider>
+          <Navbar />
+          {/* Bottom padding clears the mobile tab bar (hidden on md+) */}
+          <main className="flex-1 pb-24 md:pb-0">{children}</main>
+          <footer className="hidden md:block border-t border-border/40 py-5">
+            <p className="container mx-auto px-6 text-center text-xs text-muted-foreground">
+              PaperTrade is a paper-trading simulator for learning. Market data
+              may be delayed. Nothing here is financial advice.
+            </p>
+          </footer>
+        </ToastProvider>
       </body>
     </html>
   );

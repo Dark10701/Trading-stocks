@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Loader2 } from "lucide-react";
+import { TrendingUp, Loader2, Wallet, Clock } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -43,9 +43,22 @@ function LoginContent() {
         <h1 className="text-2xl font-bold text-foreground tracking-tight">
           Welcome to PaperTrade
         </h1>
-        <p className="text-sm text-muted-foreground mt-2 mb-8">
-          Sign in to start trading with $10,000 in virtual cash.
+        <p className="text-sm text-muted-foreground mt-2 mb-6">
+          Learn to invest — without risking real money.
         </p>
+
+        <div className="text-left space-y-2.5 mb-8">
+          {[
+            { icon: Wallet, text: "Start with $10,000 in virtual cash" },
+            { icon: TrendingUp, text: "Trade real stocks at real market prices" },
+            { icon: Clock, text: "Track your portfolio, history, and P&L" },
+          ].map(({ icon: Icon, text }) => (
+            <div key={text} className="flex items-center gap-2.5">
+              <Icon className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm text-muted-foreground">{text}</span>
+            </div>
+          ))}
+        </div>
 
         {hasError && (
           <p className="text-sm text-destructive mb-4">
